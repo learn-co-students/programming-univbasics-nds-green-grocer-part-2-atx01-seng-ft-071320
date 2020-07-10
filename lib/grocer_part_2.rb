@@ -3,72 +3,50 @@ require 'pry'
 
 def apply_coupons(cart, coupons)
   
-  counter = 0
-  
-  while counter < coupons.length 
-    cart_item = find_item_by_name_in_collection(coupons[counter][:item], cart)    
-    couponed_item_name = "#{coupons[counter][:item]} W/COUPON"
-    cart_item_with_coupon = find_item_by_name_in_collection(couponed_item_name, cart)
-    if cart_item && cart_item[:count] >= coupons[counter][:num]
-      if cart_item_with_coupon
-        cart_item_with_coupon[:count] += coupons[counter][:num]
-        cart_item[:count] -= coupons[counter][:num]
-      else
-        cart_item_with_coupon = {
-          :item => couponed_item_name, 
-          :price => coupons[counter][:cost] / coupons[counter][:num], 
-          :clearance => cart_item[:clearance], 
-          :count => coupons[counter][:num]
-        }
-        cart << cart_item_with_coupon
-        cart_item[:count] -= coupons[counter][:num]
+  coupons.each do |coupon|
+    item = find_item_by_name_in_collection(coupon[:item], cart)
+    
+    couponed_item_name = coupon[:item] + " W/COUPON"
+    couponed_item_cost = coupon[:cost]/coupon[:num]
+    couponed_item_clearance = item[:clearance]
+    couponed_item_count = coupon[:num]
+    
+    if item != nil
+      if item[:count] >= coupon[:num]
+        item[:count] -= coupon[:num]
+        cart << {:item => couponed_item_name, :price => couponed_item_cost, :clearance => couponed_item_clearance, :count => couponed_item_count}
       end
     end
-    counter += 1
   end
-  cart
+ cart
 end
 
 def apply_clearance(cart)
-  counter = 0 
-  while counter < cart.length
-    if cart[counter][:clearance] == TRUE
-      cart[counter][:price] = cart[counter][:price]*0.8.round(2)
+  cart.each do |item|
+    if item[:clearance] == true
+      item[:price] = item[:price]*0.8
     end
-    counter += 1
   end
-  cart
 end
 
 def checkout(cart, coupons)
-  # Consult README for inputs and outputs
-  #
-  # This method should call
-  # * consolidate_cart
-  # * apply_coupons
-  # * apply_clearance
-  #
-  # BEFORE it begins the work of calculating the total (or else you might have
-  # some irritated customers
   
-  new_cart = consolidate_cart(cart)
-  couponed_cart = apply_coupons(new_cart, coupons)
-  clearanced_and_couponed_cart = apply_clearance(couponed_cart)
+  consolidated_cart = consolidate_cart(cart)
+  couponed_cart = apply_coupons(consolidated_cart, coupons)
+  clearanced_cart = apply_clearance(couponed_cart)
   
+  total_price = 0 
   
-  counter = 0
-  total = 0
-  final_total = 0 
-  
-  while counter < clearanced_and_couponed_cart.length
-    total += clearanced_and_couponed_cart[counter][:price]*clearanced_and_couponed_cart[counter][:count]
-    counter += 1
+  clearanced_cart.each do |item|
+    total_item_cost = item[:price]*item[:count]
+    total_price += total_item_cost
   end
   
-  if total > 100
-    final_total = total*0.9.round(2)
-  else
-    final_total = total.round(2)
+  if total_price > 100
+    total_price = total_price*0.9
   end
-  final_total
+  
+  total_price.round(2)
+  
 end
+
